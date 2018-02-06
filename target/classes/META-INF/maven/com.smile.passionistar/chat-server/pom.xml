@@ -44,7 +44,7 @@
  				</execution>
  			</executions>
  			<configuration>
- 				<mainClass>com.smile.passionistar.ch0.WebSocketServer</mainClass>
+ 				<mainClass>com.smile.passionistar.ch0.spring.WebSocketServerBySpring</mainClass>
  			</configuration>
  		</plugin>
  	</plugins>

@@ -7,7 +7,7 @@ public class RedisClusterMessageDelegate implements IMessageDelegate{
 
 	@Override
 	public void handleMessage(String message) {
-		System.out.println("Message Received: " + message);
+//		System.out.println("Message Received: " + message);
 		
 	}
 
@@ -31,7 +31,7 @@ public class RedisClusterMessageDelegate implements IMessageDelegate{
 
 	@Override
 	public void handleMessage(Serializable message, String channel) {
-		System.out.println("Message Received at Delegate: " + message.toString() + " from Channel [" + channel +"]");
+//		System.out.println("Message Received at Delegate: " + message.toString() + " from Channel [" + channel +"]");
 		
 	}
 

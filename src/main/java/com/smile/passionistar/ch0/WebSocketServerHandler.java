@@ -146,7 +146,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 
         // Send the uppercase string back.
         String request = ((TextWebSocketFrame) frame).text();
-        System.err.printf("%s received %s%n", ctx.channel(), request); //콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
+//        System.err.printf("%s received %s%n", ctx.channel(), request); //콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
 //        JsonParser jsonps = new JsonParser(); // json 데이터형을 사용할 일이 있을 때 사용할 계획 
 //        request =jsonps.jsonParsingForText(request);
 //        roomForChannelGroup.findByChannelId(ctx.channel()).writeAndFlush(new TextWebSocketFrame(ctx.channel().attr(nickAttr).get()+": "+request));

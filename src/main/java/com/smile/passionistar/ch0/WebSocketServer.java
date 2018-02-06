@@ -52,11 +52,6 @@ public final class WebSocketServer {
              .childHandler(new WebSocketServerInitializer(sslCtx)); //클라이언트 소켓 채널 측에 ssl 에 관련된 핸들러를 등록한다.
 
             Channel ch = b.bind(PORT).sync().channel();
-            System.out.println("testchat-server");
-            System.out.println("Open your web browser and navigate to " +
-                    (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');// 접속위치 콘솔에 알리기 테스트용
-            
-
             ch.closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
