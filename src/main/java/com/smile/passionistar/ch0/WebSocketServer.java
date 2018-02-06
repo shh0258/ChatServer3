@@ -42,7 +42,7 @@ public final class WebSocketServer {
             sslCtx = null;
         }
 
-        EventLoopGroup bossGroup = new EpollEventLoopGroup(4);
+        EventLoopGroup bossGroup = new EpollEventLoopGroup(1);
         EventLoopGroup workerGroup = new EpollEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
