@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.smile.passionistar</groupId>
+  <artifactId>chat-server</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>netty chat server used by nio</name>
+  <description>테스트 버젼으로 nio 쓴 예제 메이븐에 배포해보기</description>
+  
+ <dependencies>
+ 	<dependency>
+ 		<groupId>io.netty</groupId>
+ 		<artifactId>netty-all</artifactId>
+ 		<version>4.1.19.Final</version>
+ 	</dependency>
+ 	 <dependency>
+ 		<groupId>org.springframework</groupId>
+ 		<artifactId>spring-context</artifactId>
+ 		<version>4.1.6.RELEASE</version>
+ 	</dependency>
+	<dependency>
+   	 	<groupId>org.springframework.data</groupId>
+    		<artifactId>spring-data-redis</artifactId>
+   		<version>1.0.0.RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>com.googlecode.json-simple</groupId>
+		<artifactId>json-simple</artifactId>
+		<version>1.1</version>
+	</dependency>
+ </dependencies>
+  
+  
+<build>
+ 	<plugins>
+ 		<plugin>
+ 			<groupId>org.codehaus.mojo</groupId>
+ 			<artifactId>exec-maven-plugin</artifactId>
+ 			<version>1.4.0</version>
+ 			<executions>
+ 				<execution>
+ 					<goals>
+ 						<goal>java</goal>
+ 					</goals>
+ 				</execution>
+ 			</executions>
+ 			<configuration>
+ 				<mainClass>com.smile.passionistar.ch0.WebSocketServer</mainClass>
+ 			</configuration>
+ 		</plugin>
+ 	</plugins>
+ </build>
+ 
+ <!--  콘솔에서 mvn exec:java -Dexec.mainClass=com.smile.passionistar.ch0.spring.WebSocketServerBySpring 요걸로 접속하지 않으려면 직접 goal을 설정한다  골설정시 mvn exec:java로 접속가능 -->
+</project>
