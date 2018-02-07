@@ -99,7 +99,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         		Matcher m2 = wsP.matcher(req.getUri());
         		
         if (m.find()) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
-            ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
+//            ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req)); 8byte 테스트를 위해 임시로 추가
+        		ByteBuf content = Unpooled.buffer(8);
             FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content); // ws로 설정된 주소를 인자로 받아서 페이지 전체를 bytebuf에 담아준다 
 
             res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
