@@ -41,7 +41,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     private static final String WEBSOCKET_PATH = "/websocket";
     static final AttributeKey<String> nickAttr = AttributeKey.newInstance("nickname");
     private WebSocketServerHandshaker handshaker;
-    RoomForChannelGroup roomForChannelGroup;
+    RoomForChannelGroup2 roomForChannelGroup;
     RedisCluster redisCluster;
     
     private void hello(Channel ch, FullHttpRequest req){
@@ -114,7 +114,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         		WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
         				getWebSocketLocation(req), null, true); // 웹소켓 팩토리에 req를 저장함 
         		handshaker = wsFactory.newHandshaker(req); // 팩토리에 새로운 핸드쉐이크를 지정해서 객체에 저장함 
-        		roomForChannelGroup = new RoomForChannelGroup(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
+        		roomForChannelGroup = new RoomForChannelGroup2(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
         		Channel c = roomForChannelGroup.AddChannelGroup(); // 채널그룹에 등록한 후 리턴되는 채널의 값을 통해 핸드쉐이크를 하고 이 채널에는 핸드쉐이크가 정의된다. 그 상태로 룸객체에 들어가서 태그단위의 관리를 받는다 
         		if (handshaker == null) {
         			WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(c);
