@@ -1,98 +1,116 @@
 package com.smile.passionistar.ch0;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelId;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
-public class RoomForChannelGroup {
+public class RoomForChannelGroup {// 해시형태 룸관리 
 	RedisCluster redisCluster = new RedisCluster();
 
-    public static ArrayList<Room> roomValues = new ArrayList<Room>();//방 목록을 관리하는 static 메서드 
+    public static HashMap<String, Room> roomMap = new HashMap<String, Room>();//쿼리스트링과 룸을 받음 
+    public static HashMap<ChannelId, String> channelQs = new HashMap<ChannelId, String>();// 채널아이디와 쿼리스트링을 받음 
+    public static int userCount=0;
+    
+    
 	Channel ch;
 	FullHttpRequest req; // 쿼리스트링 얻기 위해 받아옴 
+	
+	public RoomForChannelGroup() {
+		
+	}
 	
 	public RoomForChannelGroup(Channel ch, FullHttpRequest req) {
 		this.ch = ch;
 		this.req =req;
 	}
 	
+	
 	public Channel AddChannelGroup() {
 		Room rtemp = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), "false");
 		
-		if(roomValues.isEmpty()) {
+		if(roomMap.isEmpty()) {
 			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), req.getUri()); // 쿼리스트링 값에 해당하는 룸객체를 생성 
 			room.cg.add(ch); //룸에 새로운 채널그룹을 생
-			roomValues.add(room);
+			room.count++;
+			userCount++;
+			roomMap.put(req.getUri(), room);
 			rtemp = room;
-			redisCluster.redisClusterLancher(req.getUri(), room.cg);
+			redisCluster.redisClusterLancher(req.getUri(), room.cg);// 레디스 채널에 등록 
+			channelQs.put(ch.id(), req.getUri());
 			return room.cg.find(ch.id());
 		}
 		
-		for(Room r : roomValues) {// 모든 룸객체에 찾아가서 
-			if(r.qs.equals(req.getUri())) { // 쿼리스트링이 일치하면 
-				r.cg.add(ch); //채널 그룹객체에 채널을 추가하
-				rtemp = r;
+		if(roomMap.containsKey(req.getUri())) {//이미 존재하는 room 인 경우 
+			roomMap.get(req.getUri()).cg.add(ch);
+			roomMap.get(req.getUri()).count++;
+			userCount++;
+			rtemp=roomMap.get(req.getUri());
+			if(!channelQs.containsKey(ch.id())) {
+				channelQs.put(ch.id(), req.getUri());
 			}
-			
 		}
-
-		System.out.println(roomValues.toString());
-		if(!rtemp.qs.equals(req.getUri())) { // 만약 room 객체에 아무런 qs 일치값이 없을 경우 
+		
+		if(!roomMap.containsKey(req.getUri())) { // 만약 room 객체에 아무런 qs 일치값이 없을 경우 
 			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), req.getUri()); // 쿼리스트링 값에 해당하는 룸객체를 생성 
 			room.cg.add(ch); //룸에 새로운 채널그룹을 생
-			roomValues.add(room); // 생성된 새로운 룸을 룸 목록을 관리하는배열에 넣어서 관리한다.
+			room.count++;
+			userCount++;
+			roomMap.put(req.getUri(), room);
 			rtemp = room;// 룸객체가 실제로 생성되었다면, 리턴하기 위햇 사용해
 			redisCluster.redisClusterLancher(req.getUri(), room.cg);//redis cluster에 새로운 채널그룹을 넣고 이를 등록해서 다음번에 문자를 보낼 시에 사용할 수 있게 셋팅함
+			channelQs.put(ch.id(), req.getUri());
 		}
+		
 		return rtemp.cg.find(ch.id());
 	}
 	
 	public ChannelGroup findByChannelId(Channel c) {
-		if(roomValues.isEmpty()) {
+		if(roomMap.isEmpty()) {
 			return null;
 		}
 		
-		for(Room r : roomValues) {
-			if(r.cg.find(c.id()) != null) {
-				return r.cg;
-			}
+		if(roomMap.containsKey(channelQs.get(c.id()))) {
+			return roomMap.get(channelQs.get(c.id())).cg;
 		}
-		
+			
 		return null;
 	}
 	
-	public ChannelGroup findByQueryString(String qs) {
-		if(roomValues.isEmpty()) {
+	public Room findByChannelIdReturnRoom(Channel c) {
+		if(roomMap.isEmpty()) {
 			return null;
 		}
 		
-		for(Room r : roomValues) {
-			if(r.qs.equals(qs) == true) {
-				return r.cg;
-			}
+		if(roomMap.containsKey(channelQs.get(c.id()))) {
+			return roomMap.get(channelQs.get(c.id()));
 		}
-		
+			
 		return null;
 	}
 	
 	public String findByChannelIdReturnQs(Channel c) {
-		if(roomValues.isEmpty()) {
+		if(roomMap.isEmpty()) {
 			return null;
 		}
 		
-		for(Room r : roomValues) {
-			if(r.cg.find(c.id()) != null) {
-				return r.qs;
-			}
-		}
-		
-		return null;
+		return channelQs.get(c.id());
 	}
 	
-	
-
+	public static void gabageCollectForRoomMap() {//hash 카운트가 0일 경우 쓰이지 않는 해쉬테이블 이므로 삭제한다.
+		int userCount=0;
+		
+		if(!roomMap.isEmpty()) {
+			for(Room r :roomMap.values()) {
+				userCount=userCount+r.count;
+				if(r.count == 0) {
+					roomMap.remove(r.qs);
+				}
+			}
+		}
+	}
 }

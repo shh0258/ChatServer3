@@ -1,25 +1,12 @@
-/*
- * Copyright 2012 The Netty Project
- *
- * The Netty Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
 package com.smile.passionistar.ch0;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -42,17 +29,33 @@ public final class WebSocketServer {
             sslCtx = null;
         }
 
-        EventLoopGroup bossGroup = new EpollEventLoopGroup(1);
-        EventLoopGroup workerGroup = new EpollEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-             .channel(EpollServerSocketChannel.class)//리눅스에 배포시 epoll로 설정가능, 추상화 수준과 빌더패턴 때문에 인자만 바꾸어서 사용 가능 
+             .channel(NioServerSocketChannel.class)//리눅스에 배포시 epoll로 설정가능, 추상화 수준과 빌더패턴 때문에 인자만 바꾸어서 사용 가능 
              .handler(new LoggingHandler(LogLevel.INFO)) // 서버 소켓 측에 로그핸들러 등록, 이는 클라이언트 소켓채널에 등록하지 않았음으로, log핸들러가 io바운드 핸들러를 상속했음에도 서버측 로그만 나옴 
              .childHandler(new WebSocketServerInitializer(sslCtx)); //클라이언트 소켓 채널 측에 ssl 에 관련된 핸들러를 등록한다.
 
             Channel ch = b.bind(PORT).sync().channel();
+            System.out.println("testchat-server");
+            System.out.println("Open your web browser and navigate to " +
+                    (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');// 접속위치 콘솔에 알리기 테스트용
+            
+
             ch.closeFuture().sync();
+            Runnable runnable = new Runnable() {
+
+				@Override
+				public void run() {
+					RoomForChannelGroup.gabageCollectForRoomMap();
+				}
+            };
+            ScheduledExecutorService service = Executors
+            		.newSingleThreadScheduledExecutor();
+            service.scheduleAtFixedRate(runnable, 36000, 36000, TimeUnit.SECONDS);
+
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

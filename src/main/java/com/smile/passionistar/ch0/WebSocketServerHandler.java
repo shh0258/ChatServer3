@@ -6,10 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelId;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -23,16 +20,12 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.GlobalEventExecutor;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +34,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     private static final String WEBSOCKET_PATH = "/websocket";
     static final AttributeKey<String> nickAttr = AttributeKey.newInstance("nickname");
     private WebSocketServerHandshaker handshaker;
-    RoomForChannelGroup2 roomForChannelGroup;
+    RoomForChannelGroup roomForChannelGroup;
     RedisCluster redisCluster;
     
     private void hello(Channel ch, FullHttpRequest req){
@@ -66,7 +59,10 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         if (msg instanceof FullHttpRequest) {
         		hello(ctx.channel(), (FullHttpRequest) msg); //ctx.channel 과 roomBalancing.addchannelgroup()에서나온 채널은 같은 값으로 확인   
         		handleHttpRequest(ctx, (FullHttpRequest) msg); //http 요청일 때,**2 
-            
+        		
+        		roomForChannelGroup= new RoomForChannelGroup();
+        		RedisForLB rflc = new RedisForLB(RoomForChannelGroup.userCount);
+    		    rflc.sendCount();//redis 서버에 lb를 위한 chatserver의 접속자수를 업데이트 , 이 스케줄링은 서버에 대한 헬스체크가 올때만 실행된다. 헬스체크는 http 형식으로 1초마다 보내기로 chat manage server와 약속되어있다.
         } else if (msg instanceof WebSocketFrame) {//$$2
             handleWebSocketFrame(ctx, (WebSocketFrame) msg); // websocket 요청일 때 
         }
@@ -114,7 +110,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         		WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
         				getWebSocketLocation(req), null, true); // 웹소켓 팩토리에 req를 저장함 
         		handshaker = wsFactory.newHandshaker(req); // 팩토리에 새로운 핸드쉐이크를 지정해서 객체에 저장함 
-        		roomForChannelGroup = new RoomForChannelGroup2(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
+        		roomForChannelGroup = new RoomForChannelGroup(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
         		Channel c = roomForChannelGroup.AddChannelGroup(); // 채널그룹에 등록한 후 리턴되는 채널의 값을 통해 핸드쉐이크를 하고 이 채널에는 핸드쉐이크가 정의된다. 그 상태로 룸객체에 들어가서 태그단위의 관리를 받는다 
         		if (handshaker == null) {
         			WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(c);
@@ -130,7 +126,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         // Check for closing frame
         if (frame instanceof CloseWebSocketFrame) { // 소켓을 종료했을 때 날아오는 프레임을 체크 
             handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
-            System.out.println("CLosesocket");
+            System.out.println("CLosesocket");// 이 단에서 lb를 위한 redis 데이터 업데이트가 이루어 져야함 
+            roomForChannelGroup.findByChannelIdReturnRoom(ctx.channel()).count--; // room의 갯수를 주기적으로 줄이기 위해 카운트를 세어줌
+            RoomForChannelGroup.userCount--;
             return;
         }
         if (frame instanceof PingWebSocketFrame) { // ping 형식이 왔을 때 pong 쏘기 예제 
@@ -138,7 +136,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             System.out.println("pingwebsocket");
             return;
         }
-        if (!(frame instanceof TextWebSocketFrame)) {//text웹소켓이 날아왔을 때 알림 
+        if (!(frame instanceof TextWebSocketFrame)) {//text웹소켓이 날아오지 않을 때 알림 
         		System.out.println("textwebsocket");
             throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass()
                     .getName()));
@@ -146,13 +144,14 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 
         // Send the uppercase string back.
         String request = ((TextWebSocketFrame) frame).text();
-//        System.err.printf("%s received %s%n", ctx.channel(), request); //콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
+        System.err.printf("%s received %s%n", ctx.channel(), request); //콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
 //        JsonParser jsonps = new JsonParser(); // json 데이터형을 사용할 일이 있을 때 사용할 계획 
 //        request =jsonps.jsonParsingForText(request);
 //        roomForChannelGroup.findByChannelId(ctx.channel()).writeAndFlush(new TextWebSocketFrame(ctx.channel().attr(nickAttr).get()+": "+request));
 //        redisCluster.redisClusterLancher(roomForChannelGroup.findByChannelIdReturnQs(ctx.channel())).convertAndSend("c."+roomForChannelGroup.findByChannelIdReturnQs(ctx.channel()), "testset123123");
         RedisCluster redisCluster =new RedisCluster();
-        redisCluster.redisClusterLancher(roomForChannelGroup.findByChannelId(ctx.channel())).convertAndSend("c."+roomForChannelGroup.findByChannelIdReturnQs(ctx.channel()), ctx.channel().attr(nickAttr).get()+": "+request);
+        redisCluster.redisClusterLancher(roomForChannelGroup.findByChannelId(ctx.channel()))
+        .convertAndSend("c."+roomForChannelGroup.findByChannelIdReturnQs(ctx.channel()), ctx.channel().attr(nickAttr).get()+": "+request);
     }
 
     private static void sendHttpResponse(//**4

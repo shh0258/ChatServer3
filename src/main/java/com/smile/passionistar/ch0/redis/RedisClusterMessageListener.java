@@ -15,7 +15,7 @@ public class RedisClusterMessageListener implements MessageListener {
 	
 	@Override
 	public void onMessage(Message msg, byte[] channel) {
-//		System.err.println("Message Received at Listener: " + msg.toString() + " from Channel [" + new String(channel) +"]");
+		System.err.println("Message Received at Listener: " + msg.toString() + " from Channel [" + new String(channel) +"]");
 		cg.writeAndFlush(new TextWebSocketFrame(msg.toString()));
 	}	
 
