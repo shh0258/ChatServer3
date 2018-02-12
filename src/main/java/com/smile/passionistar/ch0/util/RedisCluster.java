@@ -14,13 +14,13 @@ import io.netty.channel.group.ChannelGroup;
 
 public class RedisCluster {
 	String queryString ="";
+	static AbstractApplicationContext ctx = new AnnotationConfigApplicationContext(RedisClusterConfig.class);
 	
 	public RedisTemplate<String, Object> redisClusterLancher(ChannelGroup cg) {//빌더패턴
 		return redisClusterLancher(null, cg);
 	}
 	
 	public RedisTemplate<String, Object> redisClusterLancher(String queryString, ChannelGroup cg){
-		AbstractApplicationContext ctx = new AnnotationConfigApplicationContext(RedisClusterConfig.class);
 		RedisClusterMessageListener redisClusterMessageListener = new RedisClusterMessageListener();
 		redisClusterMessageListener.setChannelGroup(cg);
 				
