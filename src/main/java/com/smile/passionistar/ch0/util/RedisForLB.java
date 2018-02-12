@@ -5,7 +5,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import com.smile.passionistar.ch0.redis.RedisForLBConfig;
+import com.smile.passionistar.ch0.redis.RedisClusterConfig;
 
 
 public class RedisForLB {
@@ -17,7 +17,7 @@ public class RedisForLB {
 	}
 	
 	public void sendCount() {
-		AbstractApplicationContext ctx = new AnnotationConfigApplicationContext(RedisForLBConfig.class);
+		AbstractApplicationContext ctx = new AnnotationConfigApplicationContext(RedisClusterConfig.class);
 		
 		@SuppressWarnings("unchecked")
 		RedisTemplate<String, Object> redisTemplate = ctx.getBean("redisTemplate", RedisTemplate.class);
