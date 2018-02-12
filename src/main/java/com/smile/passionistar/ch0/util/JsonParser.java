@@ -1,4 +1,4 @@
-package com.smile.passionistar.ch0;
+package com.smile.passionistar.ch0.util;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;

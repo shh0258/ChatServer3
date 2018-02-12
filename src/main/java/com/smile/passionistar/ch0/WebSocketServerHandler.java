@@ -29,6 +29,11 @@ import static io.netty.handler.codec.http.HttpVersion.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.smile.passionistar.ch0.util.RandomNickname;
+import com.smile.passionistar.ch0.util.RedisCluster;
+import com.smile.passionistar.ch0.util.RedisForLB;
+import com.smile.passionistar.ch0.util.RoomForChannelGroup;
+
 public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> {
 
     private static final String WEBSOCKET_PATH = "/websocket";
@@ -59,12 +64,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         if (msg instanceof FullHttpRequest) {
         		hello(ctx.channel(), (FullHttpRequest) msg); //ctx.channel 과 roomBalancing.addchannelgroup()에서나온 채널은 같은 값으로 확인   
         		handleHttpRequest(ctx, (FullHttpRequest) msg); //http 요청일 때,**2 
-        		
-        		roomForChannelGroup= new RoomForChannelGroup();
-        		RedisForLB rflc = new RedisForLB(RoomForChannelGroup.userCount);
-    		    rflc.sendCount();//redis 서버에 lb를 위한 chatserver의 접속자수를 업데이트 , 이 스케줄링은 서버에 대한 헬스체크가 올때만 실행된다. 헬스체크는 http 형식으로 1초마다 보내기로 chat manage server와 약속되어있다.
         } else if (msg instanceof WebSocketFrame) {//$$2
-            handleWebSocketFrame(ctx, (WebSocketFrame) msg); // websocket 요청일 때 
+            handleWebSocketFrame(ctx, (WebSocketFrame) msg); // websocketframe 요청일 때  
         }
     }
 
@@ -96,11 +97,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         		
         if (m.find()) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
             ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
-            FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content); // ws로 설정된 주소를 인자로 받아서 페이지 전체를 bytebuf에 담아준다 
-
+            FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
             res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
             HttpHeaders.setContentLength(res, content.readableBytes()); // content의 길이 설정 
-
             sendHttpResponse(ctx, req, res);//http 요청시에 최초의 뷰 정보를 담아서 ws 웹소켓등급업까지 해주는 http페이지와 정보를 담은 객체를 메서드로 전달 
             return;
         }
@@ -123,11 +122,13 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 
     private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {//$$2
     	
-        // Check for closing frame
+        // 클로즈 프레임형태의 이벤트일때 캐치 
         if (frame instanceof CloseWebSocketFrame) { // 소켓을 종료했을 때 날아오는 프레임을 체크 
             handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
             System.out.println("CLosesocket");// 이 단에서 lb를 위한 redis 데이터 업데이트가 이루어 져야함 
-            roomForChannelGroup.findByChannelIdReturnRoom(ctx.channel()).count--; // room의 갯수를 주기적으로 줄이기 위해 카운트를 세어줌
+            if(--roomForChannelGroup.findByChannelIdReturnRoom(ctx.channel()).count == 0) {// room의 갯수를 주기적으로 줄이기 위해 카운트를 세어줌, 만약 카운트가 0이라면 hash에서 바로 지워버림, 이는 내가 만든 가비지 컬렉터가 없을 떄 반드시 필요함 
+        			roomForChannelGroup.deleteByChannelId(ctx.channel());
+            }
             RoomForChannelGroup.userCount--;
             return;
         }
@@ -142,9 +143,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
                     .getName()));
         }
 
-        // Send the uppercase string back.
-        String request = ((TextWebSocketFrame) frame).text();
-        System.err.printf("%s received %s%n", ctx.channel(), request); //콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
+        String request = ((TextWebSocketFrame) frame).text();//콘솔에 전달된 값을 띄워줌 PooledUnsafeDirectByteBuf사용함 
 //        JsonParser jsonps = new JsonParser(); // json 데이터형을 사용할 일이 있을 때 사용할 계획 
 //        request =jsonps.jsonParsingForText(request);
 //        roomForChannelGroup.findByChannelId(ctx.channel()).writeAndFlush(new TextWebSocketFrame(ctx.channel().attr(nickAttr).get()+": "+request));
@@ -156,7 +155,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 
     private static void sendHttpResponse(//**4
             ChannelHandlerContext ctx, FullHttpRequest req, FullHttpResponse res) {
-        // Generate an error page if response getStatus code is not OK (200).
+        // 200이 아니면 에러페이지 제너레이트함
         if (res.getStatus().code() != 200) { //200이 아니라면 에러를 위한 새로운 버퍼와 내용 전달 
             ByteBuf buf = Unpooled.copiedBuffer(res.getStatus().toString(), CharsetUtil.UTF_8);//풀없는 버퍼에 상태내용과 설정을 담고 
             res.content().writeBytes(buf);//그 내용을 httpcontent 에 담는다.
@@ -164,7 +163,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             HttpHeaders.setContentLength(res, res.content().readableBytes()); //res의content내용의 길이를 위에 넣어준 대로 헤더에 표시설정 
         }
 
-        // Send the response and close the connection if necessary.
+        // 응답하고 필요하면 연결을 닫음 
         ChannelFuture f = ctx.channel().writeAndFlush(res); // 200이면 받은 res를 채널에 wf함 
         if (!HttpHeaders.isKeepAlive(req) || res.getStatus().code() != 200) {
             f.addListener(ChannelFutureListener.CLOSE); // req가 없거나, 200이 아닐 때 채널을 닫는다.

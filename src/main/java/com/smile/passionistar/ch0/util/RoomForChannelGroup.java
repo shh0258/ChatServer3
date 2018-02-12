@@ -1,4 +1,4 @@
-package com.smile.passionistar.ch0;
+package com.smile.passionistar.ch0.util;
 
 import java.util.HashMap;
 
@@ -17,8 +17,8 @@ public class RoomForChannelGroup {// 해시형태 룸관리
     public static int userCount=0;
     
     
-	Channel ch;
-	FullHttpRequest req; // 쿼리스트링 얻기 위해 받아옴 
+	public Channel ch;
+	public FullHttpRequest req; // 쿼리스트링 얻기 위해 받아옴 
 	
 	public RoomForChannelGroup() {
 		
@@ -93,6 +93,17 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 		return null;
 	}
 	
+	public void deleteByChannelId(Channel c) {
+		if(roomMap.isEmpty()) {
+			return;
+		}
+		
+		if(roomMap.containsKey(channelQs.get(c.id()))) {
+			channelQs.remove(c.id());
+			roomMap.remove(channelQs.get(c.id()));
+		}
+	}
+	
 	public String findByChannelIdReturnQs(Channel c) {
 		if(roomMap.isEmpty()) {
 			return null;
@@ -101,7 +112,7 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 		return channelQs.get(c.id());
 	}
 	
-	public static void gabageCollectForRoomMap() {//hash 카운트가 0일 경우 쓰이지 않는 해쉬테이블 이므로 삭제한다.
+	public static void gabageCollectForRoomMap() {//hash 카운트가 0일 경우 쓰이지 않는 해쉬테이블 이므로 삭제한다. 이 메서드의 존재목적은 혹시나 유저가 하나도 없는 채팅방이더라도 생명주기가 어느정도 유지되기를 바랄 떄 사용한다 
 		int userCount=0;
 		
 		if(!roomMap.isEmpty()) {

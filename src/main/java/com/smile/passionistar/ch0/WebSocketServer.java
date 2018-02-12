@@ -1,9 +1,5 @@
 package com.smile.passionistar.ch0;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -14,7 +10,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
-public final class WebSocketServer {
+public final class WebSocketServer { // 스프링으로 부팅할 땐 쓰지 않는다.
 
     static final boolean SSL = System.getProperty("ssl") != null; //ssl 정보 입력 
     static final int PORT = Integer.parseInt(System.getProperty("port", SSL? "8443" : "8080")); //포트번호 지정  ssl 아니면 8443
@@ -39,22 +35,11 @@ public final class WebSocketServer {
              .childHandler(new WebSocketServerInitializer(sslCtx)); //클라이언트 소켓 채널 측에 ssl 에 관련된 핸들러를 등록한다.
 
             Channel ch = b.bind(PORT).sync().channel();
-            System.out.println("testchat-server");
             System.out.println("Open your web browser and navigate to " +
                     (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');// 접속위치 콘솔에 알리기 테스트용
             
 
             ch.closeFuture().sync();
-            Runnable runnable = new Runnable() {
-
-				@Override
-				public void run() {
-					RoomForChannelGroup.gabageCollectForRoomMap();
-				}
-            };
-            ScheduledExecutorService service = Executors
-            		.newSingleThreadScheduledExecutor();
-            service.scheduleAtFixedRate(runnable, 36000, 36000, TimeUnit.SECONDS);
 
         } finally {
             bossGroup.shutdownGracefully();

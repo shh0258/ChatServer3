@@ -46,9 +46,6 @@ public final class WebSocketServerIndexPage {
                 "  socket.onopen = function(event) {" + NEWLINE +
                 "    var ta = document.getElementById('responseText');" + NEWLINE +
                 "    ta.value = \"enjoy tagtalk all time \";" + NEWLINE +
-//            		"for(var i = 0; i < 10; i++){"+
-//            		"send(i);"+
-//            		"}"+NEWLINE +
                 "  };" + NEWLINE +
                 "  socket.onclose = function(event) {" + NEWLINE +
                 "    var ta = document.getElementById('responseText');" + NEWLINE +

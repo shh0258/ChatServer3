@@ -14,8 +14,8 @@ public class RedisForLBConfig {
 	@Bean
 	public JedisConnectionFactory redisConnectionFactory() {
 		JedisConnectionFactory redisConnectionFactory =new JedisConnectionFactory();
-		//redisConnectionFactory.setHostName("52.79.83.113");//여기에로드벨런싱용 레디스 주소를 넣는다 
-		redisConnectionFactory.setHostName("127.0.0.1");
+		redisConnectionFactory.setHostName("52.79.83.113");//여기에로드벨런싱용 레디스 주소를 넣는다 
+		//redisConnectionFactory.setHostName("127.0.0.1");
 		redisConnectionFactory.setPort(6379);
 		redisConnectionFactory.setUsePool(true);
 		return redisConnectionFactory;

@@ -15,8 +15,15 @@
  */
 package com.smile.passionistar.ch0.spring;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.stereotype.Component;
+
 import com.smile.passionistar.ch0.WebSocketServerInitializer;
+import com.smile.passionistar.ch0.util.RedisForLB;
+import com.smile.passionistar.ch0.util.RoomForChannelGroup;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -55,10 +62,25 @@ public final class WebSocketServerV2 {
 
             Channel ch = b.bind(PORT).sync().channel();
 
-            System.out.println("Open your web browser and navigate to " +
+            System.out.println("Boot bt Spring, Open your web browser and navigate to " +
                     (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');// 접속위치 콘솔에 알리기 테스트용    
 
+            Runnable runnable = new Runnable() {
+            	
+				@Override
+				public void run() {
+//					RoomForChannelGroup.gabageCollectForRoomMap(); //이는 room 객체에 채팅내용을 저장할 경우가생길 때, 잠시동안은 채팅방을 유지하기 위해서 필요한 내용이다.
+	        		RedisForLB rflc = new RedisForLB(RoomForChannelGroup.userCount);
+	    		    rflc.sendCount();//redis 서버에 lb를 위한 chatserver의 접속자수를 업데이트 , 이 스케줄링은 서버에 대한 헬스체크가 올때만 실행된다. 헬스체크는 http 형식으로 1초마다 보내기로 chat manage server와 약속되어있다.
+				}
+            };
+            ScheduledExecutorService service = Executors
+            		.newSingleThreadScheduledExecutor();
+            service.scheduleAtFixedRate(runnable, 100, 50, TimeUnit.SECONDS); //1초 뒤에 5초 간격으로 실행됨 
+            //타이머메서드
+            
             ch.closeFuture().sync();
+            
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

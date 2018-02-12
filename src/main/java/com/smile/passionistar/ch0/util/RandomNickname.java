@@ -1,4 +1,4 @@
-package com.smile.passionistar.ch0;
+package com.smile.passionistar.ch0.util;
 
 import java.util.UUID;
 
