@@ -19,7 +19,6 @@ public class RedisClusterConfig {
 	public JedisConnectionFactory redisConnectionFactory() {
 		JedisConnectionFactory redisConnectionFactory =new JedisConnectionFactory();
 		redisConnectionFactory.setHostName("127.0.0.1");
-//		redisConnectionFactory.setHostName("52.79.83.113");
 		redisConnectionFactory.setPort(6379);
 		redisConnectionFactory.setUsePool(true);
 		return redisConnectionFactory;

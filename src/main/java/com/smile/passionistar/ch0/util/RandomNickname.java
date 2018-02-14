@@ -7,7 +7,7 @@ public class RandomNickname {
 	
 	public String MakeNickName() {
 		UUID uuid = UUID.randomUUID();
-		userId= userId+uuid.toString().replaceAll("-", "");
+		userId= userId+uuid.toString().replaceAll("-", "").substring(20);
 		return userId;
 	}
 }

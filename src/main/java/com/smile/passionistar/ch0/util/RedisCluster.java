@@ -27,7 +27,7 @@ public class RedisCluster {
 		@SuppressWarnings("unchecked")
 		RedisTemplate<String, Object> redisTemplate = ctx.getBean("redisTemplate", RedisTemplate.class);
 		if(queryString != null) {
-			redisTemplate.convertAndSend("testset", "ms");//이 코드는 빈 파일이 업데이트 되지않는 비정상적인 동작 방식 때문에 넣었음 
+			redisTemplate.convertAndSend("testset", "new channel created");//이 코드는 빈 파일이 업데이트 되지않는 비정상적인 동작 방식 때문에 넣었음 
 			RedisMessageListenerContainer redisContainer = ctx.getBean("redisContainer", RedisMessageListenerContainer.class);
 			MessageListenerAdapter messageListener = ctx.getBean("messageListener", MessageListenerAdapter.class);
 			redisContainer.addMessageListener(messageListener, new PatternTopic("c."+queryString));

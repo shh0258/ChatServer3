@@ -15,8 +15,6 @@ public class WebSocketServerBySpring {
 		}
 		finally {
 			springContext.close();
-			
 		}
-	
 	}
 }
