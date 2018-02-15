@@ -27,13 +27,7 @@ public final class WebSocketServerIndexPage2 {
     private static final String NEWLINE = "\r\n";
 
     public static ByteBuf getContent(String webSocketLocation) {
-        return Unpooled.copiedBuffer(
-                "<html><head><title>Web Socket Test</title></head>" + NEWLINE +
-                "<body>" + NEWLINE +
-                "<script type=\"text/javascript\" src=\"http://code.jquery.com/jquery-3.2.0.min.js\" ></script>"+
-                "<script type=\"text/javascript\" charset=\"utf-8\">" + NEWLINE +
-                "</body>" + NEWLINE +
-                "</html>" + NEWLINE, CharsetUtil.US_ASCII);
+        return Unpooled.copiedBuffer("", CharsetUtil.US_ASCII);
     }
 
     private WebSocketServerIndexPage2() {
