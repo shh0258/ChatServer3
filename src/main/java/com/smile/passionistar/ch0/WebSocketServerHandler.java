@@ -95,7 +95,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         		Matcher m2 = wsP.matcher(req.getUri());
         		
         if (m.find()) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
-            ByteBuf content = WebSocketServerIndexPage2.getContent(getWebSocketLocation(req));
+            ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
             FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
             res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
             HttpHeaders.setContentLength(res, content.readableBytes()); // content의 길이 설정 
@@ -156,7 +156,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             ChannelHandlerContext ctx, FullHttpRequest req, FullHttpResponse res) {
         // 200이 아니면 에러페이지 제너레이트함
         if (res.getStatus().code() != 200) { //200이 아니라면 에러를 위한 새로운 버퍼와 내용 전달 
-            ByteBuf buf = Unpooled.copiedBuffer(res.getStatus().toString(), CharsetUtil.UTF_8);//풀없는 버퍼에 상태내용과 설정을 담고 
+            ByteBuf buf = Unpooled.copiedBuffer(res.getStatus().toString(), CharsetUtil.UTF_8);//풀에 존재하지 않는 버퍼에 상태내용과 설정을 담고 
             res.content().writeBytes(buf);//그 내용을 httpcontent 에 담는다.
             buf.release();// buf 객체의 count 를 하나 늘리
             HttpHeaders.setContentLength(res, res.content().readableBytes()); //res의content내용의 길이를 위에 넣어준 대로 헤더에 표시설정 

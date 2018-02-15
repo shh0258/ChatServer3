@@ -113,11 +113,8 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 	}
 	
 	public static void gabageCollectForRoomMap() {//hash 카운트가 0일 경우 쓰이지 않는 해쉬테이블 이므로 삭제한다. 현재 비즈니스로직에 이미처리되어 있는 기능이지만, 이 메서드의 존재목적은 혹시나 유저가 하나도 없는 채팅방이더라도 생명주기가 어느정도 유지되기를 바랄 떄 사용한다 
-		int userCount=0;
-		
 		if(!roomMap.isEmpty()) {
 			for(Room r :roomMap.values()) {
-				userCount=userCount+r.count;
 				if(r.count == 0) {
 					roomMap.remove(r.qs);
 				}

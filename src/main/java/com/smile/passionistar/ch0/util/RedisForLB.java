@@ -3,8 +3,6 @@ package com.smile.passionistar.ch0.util;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
-
-
 public class RedisForLB {
 	String count;
 	private HashOperations<String, String, String> hashOps;
