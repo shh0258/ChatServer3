@@ -90,7 +90,6 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             sendHttpResponse(ctx, req, res);
             return;
         }
-        System.out.println(req.getUri());
       	
         try {
 			if (Pattern.matches("^/[\\w|가-힣]+", URLDecoder.decode(req.getUri(), "UTF-8"))) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
@@ -117,7 +116,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 					if (handshaker == null) {
 						WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(c);
 					} else {
-						handshaker.handshake(c, roomForChannelGroup.req);// 값이 있다면 채널에 핸드쉐이크를 추가한다. 식별할 req와 함께 
+						handshaker.handshake(c, req);// 값이 있다면 채널에 핸드쉐이크를 추가한다. 식별할 req와 함께 
 					}
 			}
 		} catch (UnsupportedEncodingException e) {

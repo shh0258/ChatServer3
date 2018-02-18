@@ -20,8 +20,7 @@ public class RoomForChannelGroup {// 해시형태 룸관리
     
     
 	public Channel ch;
-	public FullHttpRequest req; // 쿼리스트링 얻기 위해 받아옴 
-	public String encodeUri;
+	public String encodeUri;// 쿼리스트링 얻기 위해 받아옴
 	
 	public RoomForChannelGroup() {
 		
@@ -29,7 +28,6 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 	
 	public RoomForChannelGroup(Channel ch, FullHttpRequest req) {
 		this.ch = ch;
-		this.req = req;
 		try {
 			this.encodeUri = URLDecoder.decode(req.getUri(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
