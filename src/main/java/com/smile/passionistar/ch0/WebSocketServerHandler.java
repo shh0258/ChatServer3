@@ -26,7 +26,8 @@ import static io.netty.handler.codec.http.HttpMethod.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
 
-import java.util.regex.Matcher;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
 import com.smile.passionistar.ch0.util.RandomNickname;
@@ -89,33 +90,40 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             sendHttpResponse(ctx, req, res);
             return;
         }
-        		Pattern httpP = Pattern.compile("[/^[0-9]*$]$");//처음 오는 요청에 대해서 http페이지를 리턴해주고, 여기서 소켓에 대한 요청이 올 것이다.이는 웹소켓으로 업그레이드 되는 기능을 가지고, 두번재 쿼리스트링에서 시작될 거다.
-        		Matcher m = httpP.matcher(req.getUri());
-        		Pattern wsP = Pattern.compile("[/^[0-9]*$/websocket]");// 웹소켓 쿼리스트링을 붙여서 올때 핸드쉐이크를 추가하기 위해 존재 
-        		Matcher m2 = wsP.matcher(req.getUri());
-        		
-        if (m.find()) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
-            ByteBuf content = WebSocketServerIndexPage2.getContent(getWebSocketLocation(req));
-            FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
-            res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
-            HttpHeaders.setContentLength(res, content.readableBytes()); // content의 길이 설정 
-            sendHttpResponse(ctx, req, res);//http 요청시에 최초의 뷰 정보를 담아서 ws 웹소켓등급업까지 해주는 http페이지와 정보를 담은 객체를 메서드로 전달 
-            return;
-        }
+        System.out.println(req.getUri());
+      	
+        try {
+			if (Pattern.matches("^/[\\w|가-힣]+", URLDecoder.decode(req.getUri(), "UTF-8"))) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
+			    ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
+			    FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+			    res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
+			    HttpHeaders.setContentLength(res, content.readableBytes()); // content의 길이 설정 
+			    sendHttpResponse(ctx, req, res);//http 요청시에 최초의 뷰 정보를 담아서 ws 웹소켓등급업까지 해주는 http페이지와 정보를 담은 객체를 메서드로 전달 
+			    return;
+			}
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-        if(m2.find()) {
-        // Handshake
-        		WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
-        				getWebSocketLocation(req), null, true); // 웹소켓 팩토리에 req를 저장함 
-        		handshaker = wsFactory.newHandshaker(req); // 팩토리에 새로운 핸드쉐이크를 지정해서 객체에 저장함 
-        		roomForChannelGroup = new RoomForChannelGroup(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
-        		Channel c = roomForChannelGroup.AddChannelGroup(); // 채널그룹에 등록한 후 리턴되는 채널의 값을 통해 핸드쉐이크를 하고 이 채널에는 핸드쉐이크가 정의된다. 그 상태로 룸객체에 들어가서 태그단위의 관리를 받는다 
-        		if (handshaker == null) {
-        			WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(c);
-        		} else {
-        			handshaker.handshake(c, roomForChannelGroup.req);// 값이 있다면 채널에 핸드쉐이크를 추가한다. 식별할 req와 함께 
-        		}
-        }
+        try {
+			if(Pattern.matches("^/[\\w|가-힣]+/websocket", URLDecoder.decode(req.getUri(), "UTF-8"))) {
+			// Handshake
+					WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
+							getWebSocketLocation(req), null, true); // 웹소켓 팩토리에 req를 저장함 
+					handshaker = wsFactory.newHandshaker(req); // 팩토리에 새로운 핸드쉐이크를 지정해서 객체에 저장함 
+					roomForChannelGroup = new RoomForChannelGroup(ctx.channel(), req); // 룸 채널 그룹 객체에 존재하는roomValues 객체에 room 을 생성, 찾아간 후 채널 그룹에 채널을 등록 
+					Channel c = roomForChannelGroup.AddChannelGroup(); // 채널그룹에 등록한 후 리턴되는 채널의 값을 통해 핸드쉐이크를 하고 이 채널에는 핸드쉐이크가 정의된다. 그 상태로 룸객체에 들어가서 태그단위의 관리를 받는다 
+					if (handshaker == null) {
+						WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(c);
+					} else {
+						handshaker.handshake(c, roomForChannelGroup.req);// 값이 있다면 채널에 핸드쉐이크를 추가한다. 식별할 req와 함께 
+					}
+			}
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
     }
 

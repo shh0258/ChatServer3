@@ -1,5 +1,7 @@
 package com.smile.passionistar.ch0.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 
 import io.netty.channel.Channel;
@@ -19,6 +21,7 @@ public class RoomForChannelGroup {// 해시형태 룸관리
     
 	public Channel ch;
 	public FullHttpRequest req; // 쿼리스트링 얻기 위해 받아옴 
+	public String encodeUri;
 	
 	public RoomForChannelGroup() {
 		
@@ -26,7 +29,13 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 	
 	public RoomForChannelGroup(Channel ch, FullHttpRequest req) {
 		this.ch = ch;
-		this.req =req;
+		this.req = req;
+		try {
+			this.encodeUri = URLDecoder.decode(req.getUri(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
@@ -34,36 +43,36 @@ public class RoomForChannelGroup {// 해시형태 룸관리
 		Room rtemp = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), "false");
 		
 		if(roomMap.isEmpty()) {
-			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), req.getUri()); // 쿼리스트링 값에 해당하는 룸객체를 생성 
+			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), encodeUri); // 쿼리스트링 값에 해당하는 룸객체를 생성 
 			room.cg.add(ch); //룸에 새로운 채널그룹을 생
 			room.count++;
 			userCount++;
-			roomMap.put(req.getUri(), room);
+			roomMap.put(encodeUri, room);
 			rtemp = room;
-			redisCluster.redisClusterLancher(req.getUri(), room.cg);// 레디스 채널에 등록 
-			channelQs.put(ch.id(), req.getUri());
+			redisCluster.redisClusterLancher(encodeUri, room.cg);// 레디스 채널에 등록 
+			channelQs.put(ch.id(), encodeUri);
 			return room.cg.find(ch.id());
 		}
 		
-		if(roomMap.containsKey(req.getUri())) {//이미 존재하는 room 인 경우 
-			roomMap.get(req.getUri()).cg.add(ch);
-			roomMap.get(req.getUri()).count++;
+		if(roomMap.containsKey(encodeUri)) {//이미 존재하는 room 인 경우 
+			roomMap.get(encodeUri).cg.add(ch);
+			roomMap.get(encodeUri).count++;
 			userCount++;
-			rtemp=roomMap.get(req.getUri());
+			rtemp=roomMap.get(encodeUri);
 			if(!channelQs.containsKey(ch.id())) {
-				channelQs.put(ch.id(), req.getUri());
+				channelQs.put(ch.id(), encodeUri);
 			}
 		}
 		
-		if(!roomMap.containsKey(req.getUri())) { // 만약 room 객체에 아무런 qs 일치값이 없을 경우 
-			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), req.getUri()); // 쿼리스트링 값에 해당하는 룸객체를 생성 
+		if(!roomMap.containsKey(encodeUri)) { // 만약 room 객체에 아무런 qs 일치값이 없을 경우 
+			Room room = new Room(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), encodeUri); // 쿼리스트링 값에 해당하는 룸객체를 생성 
 			room.cg.add(ch); //룸에 새로운 채널그룹을 생
 			room.count++;
 			userCount++;
-			roomMap.put(req.getUri(), room);
+			roomMap.put(encodeUri, room);
 			rtemp = room;// 룸객체가 실제로 생성되었다면, 리턴하기 위햇 사용해
-			redisCluster.redisClusterLancher(req.getUri(), room.cg);//redis cluster에 새로운 채널그룹을 넣고 이를 등록해서 다음번에 문자를 보낼 시에 사용할 수 있게 셋팅함
-			channelQs.put(ch.id(), req.getUri());
+			redisCluster.redisClusterLancher(encodeUri, room.cg);//redis cluster에 새로운 채널그룹을 넣고 이를 등록해서 다음번에 문자를 보낼 시에 사용할 수 있게 셋팅함
+			channelQs.put(ch.id(), encodeUri);
 		}
 		
 		return rtemp.cg.find(ch.id());
