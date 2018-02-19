@@ -93,7 +93,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
       	
         try {
 			if (Pattern.matches("^/[\\w|가-힣]+", URLDecoder.decode(req.getUri(), "UTF-8"))) { // 이 요청일 때, http 뷰페이지 리턴해주기, 서버와 연결 시 필요없는 부분  **3
-			    ByteBuf content = WebSocketServerIndexPage2.getContent(getWebSocketLocation(req));
+			    ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
 			    FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
 			    res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8"); // res 의 헤더값 설정 
 			    HttpHeaders.setContentLength(res, content.readableBytes()); // content의 길이 설정 
